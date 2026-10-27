@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock, CheckCircle2, XCircle, AlertCircle, ShieldAlert } from 'lucide-react';
+import { Clock, CheckCircle2, XCircle, AlertCircle, ShieldAlert, GitCommit } from 'lucide-react';
 import { ForecastRevisionItem } from '../types';
 
 interface DecisionTimelineProps {
@@ -14,34 +14,30 @@ export const DecisionTimeline: React.FC<DecisionTimelineProps> = ({
   decisionDate,
   deliveryDate,
   cutoffTime,
-  cutoffTimestamp,
   revisions
 }) => {
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-800 gap-2">
+    <div className="glass-panel rounded-2xl p-5 border border-white/[0.06] shadow-xl">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-white/[0.06] gap-2">
         <div>
-          <h3 className="text-base font-bold text-white flex items-center space-x-2">
+          <h3 className="text-sm font-bold text-white flex items-center space-x-2">
             <Clock className="w-4 h-4 text-sky-400" />
-            <span>Decision Replay: Forecast Selection Timeline</span>
+            <span>Forecast Selection Audit Trail (Decision Replay)</span>
           </h3>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Explains exactly which Elexon forecast vintage was selected for Day-Ahead purchasing and why later publications were strictly excluded.
+          <p className="text-[11px] text-zinc-400 mt-0.5">
+            Elexon forecast publication vintages for delivery day <strong>{deliveryDate}</strong>, ordered chronologically.
           </p>
         </div>
 
-        <div className="flex items-center space-x-2 text-xs font-mono">
-          <span className="px-2.5 py-1 rounded-lg bg-sky-950/80 text-sky-300 border border-sky-800">
+        <div className="flex items-center space-x-2 text-[11px] font-mono">
+          <span className="px-2.5 py-1 rounded-lg bg-sky-500/10 text-sky-300 border border-sky-500/20">
             Cutoff: {cutoffTime} GMT ({decisionDate})
-          </span>
-          <span className="px-2.5 py-1 rounded-lg bg-emerald-950/80 text-emerald-300 border border-emerald-800">
-            Target Delivery: {deliveryDate}
           </span>
         </div>
       </div>
 
-      {/* Visual Timeline Stepper */}
-      <div className="mt-6 space-y-3">
+      {/* Modern Stepper Audit Trail */}
+      <div className="mt-5 space-y-2.5">
         {revisions.map((rev, index) => {
           const isSelected = rev.status === 'SELECTED';
           const isSuperseded = rev.status === 'SUPERSEDED';
@@ -51,52 +47,52 @@ export const DecisionTimeline: React.FC<DecisionTimelineProps> = ({
           return (
             <div
               key={index}
-              className={`p-4 rounded-xl border transition flex flex-col md:flex-row md:items-center justify-between gap-3 ${
+              className={`p-3.5 rounded-xl border transition-all duration-150 flex flex-col md:flex-row md:items-center justify-between gap-3 ${
                 isSelected
-                  ? 'bg-emerald-950/40 border-emerald-500/60 shadow-lg shadow-emerald-950/30 ring-1 ring-emerald-500/30'
+                  ? 'bg-emerald-500/[0.08] border-emerald-500/40 shadow-sm ring-1 ring-emerald-500/20'
                   : isExcluded
-                  ? 'bg-slate-950/40 border-slate-800/80 opacity-60'
-                  : 'bg-slate-950/60 border-slate-800'
+                  ? 'bg-white/[0.01] border-white/[0.04] opacity-50 hover:opacity-75'
+                  : 'bg-white/[0.02] border-white/[0.04] hover:bg-white/[0.03]'
               }`}
             >
               <div className="flex items-start space-x-3">
-                <div className="mt-0.5">
-                  {isSelected && <CheckCircle2 className="w-5 h-5 text-emerald-400" />}
-                  {isSuperseded && <AlertCircle className="w-5 h-5 text-sky-400" />}
-                  {isExcluded && <XCircle className="w-5 h-5 text-rose-400" />}
+                <div className="mt-0.5 shrink-0">
+                  {isSelected && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
+                  {isSuperseded && <GitCommit className="w-4 h-4 text-zinc-500" />}
+                  {isExcluded && <XCircle className="w-4 h-4 text-rose-400/80" />}
                 </div>
 
                 <div>
                   <div className="flex items-center space-x-2">
-                    <span className="font-mono font-bold text-xs text-slate-200">
+                    <span className="font-mono font-semibold text-xs text-zinc-200">
                       {timeFormatted}
                     </span>
                     <span
-                      className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                      className={`text-[9px] px-2 py-0.5 rounded-md font-mono font-bold uppercase tracking-wider ${
                         isSelected
-                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                           : isSuperseded
-                          ? 'bg-sky-500/20 text-sky-400 border border-sky-500/40'
-                          : 'bg-rose-500/20 text-rose-400 border border-rose-500/40'
+                          ? 'bg-zinc-800 text-zinc-400 border border-zinc-700'
+                          : 'bg-rose-500/15 text-rose-300 border border-rose-500/30'
                       }`}
                     >
                       {rev.status}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-300 mt-1">
+                  <p className="text-xs text-zinc-300 mt-1 leading-snug">
                     {rev.reason}
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center space-x-4 text-xs font-mono shrink-0 pl-8 md:pl-0">
-                <div>
-                  <span className="text-[10px] text-slate-500 uppercase block">Avg Wind Outlook</span>
-                  <span className="font-bold text-slate-200">{rev.avg_forecast_mw.toLocaleString()} MW</span>
+              <div className="flex items-center space-x-4 text-xs font-mono shrink-0 pl-7 md:pl-0">
+                <div className="text-right">
+                  <span className="text-[10px] text-zinc-500 block uppercase">Avg Forecast</span>
+                  <span className="font-semibold text-zinc-200">{rev.avg_forecast_mw.toLocaleString()} MW</span>
                 </div>
-                <div>
-                  <span className="text-[10px] text-slate-500 uppercase block">Horizons</span>
-                  <span className="text-slate-400">{rev.horizon_count} hours</span>
+                <div className="text-right">
+                  <span className="text-[10px] text-zinc-500 block uppercase">Horizons</span>
+                  <span className="text-zinc-400">{rev.horizon_count} hrs</span>
                 </div>
               </div>
             </div>
@@ -104,10 +100,10 @@ export const DecisionTimeline: React.FC<DecisionTimelineProps> = ({
         })}
       </div>
 
-      <div className="mt-4 p-3 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-slate-400 flex items-center space-x-2">
+      <div className="mt-4 p-3 bg-white/[0.02] border border-white/[0.06] rounded-xl text-[11px] text-zinc-400 flex items-center space-x-2.5">
         <ShieldAlert className="w-4 h-4 text-sky-400 shrink-0" />
         <span>
-          <strong>Why this matters:</strong> Forecasts published after {cutoffTime} GMT are strictly excluded. Leaking late-published forecasts into day-ahead performance evaluations creates false confidence (look-ahead bias) and invalidates backtests.
+          <strong>Zero Look-Ahead Bias Guarantee:</strong> Forecasts published after {cutoffTime} GMT are strictly excluded from Day-Ahead evaluation. They cannot retroactively leak into past purchase decisions.
         </span>
       </div>
     </div>
