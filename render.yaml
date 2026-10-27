@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: kjhwr-windlens
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: oregon
+    healthCheckPath: /health
