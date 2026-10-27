@@ -262,7 +262,7 @@ export const AccuracyAnalytics: React.FC<AccuracyAnalyticsProps> = ({
                   formatter={(val: any) => [`${val} hours (${((Number(val)/744)*100).toFixed(1)}%)`, 'Frequency']}
                 />
                 <Bar dataKey="frequency" fill="#0284c7" radius={[4, 4, 0, 0]}>
-                  {error_distribution.map((entry, index) => (
+                  {error_distribution.map((entry: any, index: number) => (
                     <Cell
                       key={`cell-${index}`}
                       fill={entry.bin_start >= 0 ? '#f59e0b' : '#38bdf8'}

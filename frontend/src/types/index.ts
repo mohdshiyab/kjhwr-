@@ -1,3 +1,123 @@
+export interface DecisionDateItem {
+  decision_date: string;
+  delivery_date: string;
+  label: string;
+}
+
+export interface DecisionInterval {
+  interval_index: number;
+  settlement_period: number;
+  start_time: string;
+  hour: number;
+  minute: number;
+  actual_mw: number | null;
+  forecast_mw: number | null;
+  error_mw: number | null;
+  abs_error_mw: number | null;
+  forecast_publish_time: string | null;
+  is_matched: boolean;
+  is_eligible: boolean;
+}
+
+export interface DecisionSummary {
+  decision_date: string;
+  delivery_date: string;
+  cutoff_timestamp: string;
+  matched_intervals: number;
+  total_intervals: number;
+  coverage_pct: number;
+  mae_mw: number;
+  rmse_mw: number;
+  mean_signed_error_mw: number;
+  avg_actual_mw: number;
+  avg_forecast_mw: number;
+  total_actual_mwh: number;
+  total_forecast_mwh: number;
+  active_vintage_publish_time: string | null;
+}
+
+export interface ForecastRevisionItem {
+  publish_time: string;
+  status: 'SELECTED' | 'SUPERSEDED' | 'EXCLUDED';
+  is_eligible: boolean;
+  reason: string;
+  avg_forecast_mw: number;
+  horizon_count: number;
+}
+
+export interface DecisionReplayResponse {
+  decision_date: string;
+  delivery_date: string;
+  cutoff_time: string;
+  cutoff_timestamp: string;
+  summary: DecisionSummary;
+  intervals: DecisionInterval[];
+  revisions: ForecastRevisionItem[];
+}
+
+export interface DiurnalProfileHour {
+  hour: number;
+  hour_label: string;
+  settlement_periods: number[];
+  mae_mw: number;
+  mean_signed_error_mw: number;
+  rmse_mw: number;
+  avg_actual_mw: number;
+  avg_forecast_mw: number;
+  sample_count: number;
+}
+
+export interface AnalyticsSummaryResponse {
+  date_range: string;
+  decision_days_count: number;
+  total_matched_intervals: number;
+  total_expected_intervals: number;
+  coverage_pct: number;
+  mae_mw: number;
+  rmse_mw: number;
+  mean_signed_error_mw: number;
+  wape_pct: number;
+  avg_actual_mw: number;
+  avg_forecast_mw: number;
+  diurnal_profile: DiurnalProfileHour[];
+  daily_breakdown: DecisionSummary[];
+}
+
+export interface DataQualityReport {
+  status: string;
+  dataset_sources: {
+    actuals: string;
+    forecasts: string;
+  };
+  records_ingested: {
+    total_wind_actual_intervals: number;
+    total_wind_forecast_horizons: number;
+    expected_jan_delivery_intervals: number;
+    actual_jan_delivery_intervals_present: number;
+    missing_intervals: number;
+    duplicate_records: number;
+  };
+  decision_cutoff_rules: {
+    default_cutoff_time: string;
+    alternative_cutoffs_supported: string[];
+  };
+  last_cache_refresh: string;
+}
+
+// Backward-compatible types
+export interface TimeSeriesPoint {
+  start_time: string;
+  settlement_date: string;
+  hour: number;
+  settlement_periods: number[];
+  actual_mw: number;
+  forecast_mw?: number | null;
+  error_mw?: number | null;
+  abs_error_mw?: number | null;
+  pct_error?: number | null;
+  publish_time?: string | null;
+}
+
 export interface MetricSummary {
   mae_mw: number;
   rmse_mw: number;
@@ -24,57 +144,6 @@ export interface ExecutiveKPIs {
   metrics: MetricSummary;
 }
 
-export interface TimeSeriesPoint {
-  start_time: string;
-  settlement_date: string;
-  hour: number;
-  settlement_periods: number[];
-  actual_mw: number;
-  forecast_mw?: number | null;
-  error_mw?: number | null;
-  abs_error_mw?: number | null;
-  pct_error?: number | null;
-  publish_time?: string | null;
-}
-
-export interface SettlementPeriodBreakdown {
-  settlement_period: number;
-  hour_of_day: number;
-  avg_actual_mw: number;
-  avg_forecast_mw: number;
-  mae_mw: number;
-  bias_mw: number;
-  rmse_mw: number;
-  sample_count: number;
-}
-
-export interface DailyAccuracyRecord {
-  date: string;
-  avg_actual_mw: number;
-  avg_forecast_mw: number;
-  mae_mw: number;
-  rmse_mw: number;
-  wape_pct: number;
-  bias_mw: number;
-  max_under_forecast_mw: number;
-  max_over_forecast_mw: number;
-}
-
-export interface ErrorDistributionBin {
-  bin_start: number;
-  bin_end: number;
-  bin_label: string;
-  frequency: number;
-  percentage: number;
-}
-
-export interface AccuracyAnalyticsResponse {
-  summary: MetricSummary;
-  settlement_period_profile: SettlementPeriodBreakdown[];
-  daily_leaderboard: DailyAccuracyRecord[];
-  error_distribution: ErrorDistributionBin[];
-}
-
 export interface GateClosureComparisonItem {
   gate_closure_id: string;
   gate_closure_label: string;
@@ -86,38 +155,15 @@ export interface GateClosureComparisonItem {
   p90_error_mw: number;
 }
 
-export interface ThermalProcurementHour {
-  hour: number;
-  start_time: string;
-  consumer_demand_mw: number;
-  wind_forecast_mw: number;
-  derated_wind_mw: number;
-  actual_wind_mw: number;
-  thermal_procured_mw: number;
-  actual_thermal_needed_mw: number;
-  imbalance_mw: number;
-  status: 'BALANCED' | 'SHORT' | 'LONG';
-  est_imbalance_impact_gbp: number;
+export interface AccuracyAnalyticsResponse {
+  summary: MetricSummary;
+  settlement_period_profile: any[];
+  daily_leaderboard: any[];
+  error_distribution: any[];
 }
 
 export interface ThermalProcurementResponse {
   target_date: string;
-  summary: {
-    target_date: string;
-    gate_closure: string;
-    base_demand_mw: number;
-    use_derating_buffer: boolean;
-    buffer_pct: number;
-    total_demand_mwh: number;
-    total_wind_actual_mwh: number;
-    total_wind_forecast_mwh: number;
-    total_thermal_procured_mwh: number;
-    total_thermal_needed_mwh: number;
-    net_imbalance_mwh: number;
-    total_short_mwh: number;
-    total_long_mwh: number;
-    est_imbalance_penalty_gbp: number;
-    renewable_penetration_pct: number;
-  };
-  hourly_schedule: ThermalProcurementHour[];
+  summary: any;
+  hourly_schedule: any[];
 }

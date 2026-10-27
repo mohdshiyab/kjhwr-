@@ -92,7 +92,7 @@ export const ThermalSimulator: React.FC<ThermalSimulatorProps> = ({
   const netSavings = Math.max(0, unbufferedPenalty - bufferedPenalty);
 
   // Prepare chart data
-  const chartData = hourly_schedule.map((h) => ({
+  const chartData = hourly_schedule.map((h: any) => ({
     hour: `${h.hour.toString().padStart(2, '0')}:00`,
     consumerDemand: h.consumer_demand_mw,
     thermalProcured: h.thermal_procured_mw,

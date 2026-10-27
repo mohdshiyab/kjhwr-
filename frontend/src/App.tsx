@@ -1,150 +1,184 @@
 import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
-import { ExecutiveKPIs } from './components/ExecutiveKPIs';
-import { DayAheadDesk } from './components/DayAheadDesk';
-import { AccuracyAnalytics } from './components/AccuracyAnalytics';
-import { GateClosureImpact } from './components/GateClosureImpact';
+import { OverviewPage } from './pages/OverviewPage';
+import { DecisionReplayPage } from './pages/DecisionReplayPage';
+import { AnalyticsPage } from './pages/AnalyticsPage';
+import { DataMethodPage } from './pages/DataMethodPage';
 import { ClientPitchDeck } from './components/ClientPitchDeck';
 import { TechLeadReview } from './components/TechLeadReview';
 
 import {
-  fetchSummary,
-  fetchTimeSeries,
-  fetchAccuracyMetrics,
-  fetchAvailableDates
+  fetchDecisionDates,
+  fetchDecisionReplay,
+  fetchAnalyticsSummary
 } from './services/api';
 import {
-  ExecutiveKPIs as KPIsType,
-  TimeSeriesPoint,
-  AccuracyAnalyticsResponse
+  DecisionDateItem,
+  DecisionReplayResponse,
+  AnalyticsSummaryResponse
 } from './types';
 
 export const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<string>('desk');
-  const [selectedGateClosure, setSelectedGateClosure] = useState<string>('da_1100');
-  const [selectedDate, setSelectedDate] = useState<string>('2026-01-15');
-  const [isFullMonth, setIsFullMonth] = useState<boolean>(true);
-  const [availableDates, setAvailableDates] = useState<string[]>([]);
+  const [activeScreen, setActiveScreen] = useState<'overview' | 'replay' | 'analytics' | 'method'>('replay');
+  const [decisionDates, setDecisionDates] = useState<DecisionDateItem[]>([]);
+  const [selectedDecisionDate, setSelectedDecisionDate] = useState<string>('2026-01-14');
+  const [cutoffTime, setCutoffTime] = useState<string>('15:30');
 
-  const [kpis, setKpis] = useState<KPIsType | null>(null);
-  const [timeSeries, setTimeSeries] = useState<TimeSeriesPoint[]>([]);
-  const [analytics, setAnalytics] = useState<AccuracyAnalyticsResponse | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [replayData, setReplayData] = useState<DecisionReplayResponse | null>(null);
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsSummaryResponse | null>(null);
+  const [loadingReplay, setLoadingReplay] = useState<boolean>(true);
+  const [loadingAnalytics, setLoadingAnalytics] = useState<boolean>(true);
 
-  // Load available dates on mount
+  // Modals for video presentation guides
+  const [showPitchModal, setShowPitchModal] = useState<boolean>(false);
+  const [showTechModal, setShowTechModal] = useState<boolean>(false);
+
+  // Load decision dates on mount
   useEffect(() => {
-    async function loadDates() {
+    async function initDates() {
       try {
-        const dates = await fetchAvailableDates();
-        if (dates.length > 0) {
-          setAvailableDates(dates);
-          if (!selectedDate || !dates.includes(selectedDate)) {
-            setSelectedDate(dates[14] || dates[0]); // Jan 15 or first
-          }
+        const dates = await fetchDecisionDates();
+        setDecisionDates(dates);
+        if (dates.length > 0 && !dates.some((d) => d.decision_date === selectedDecisionDate)) {
+          setSelectedDecisionDate(dates[13]?.decision_date || dates[0].decision_date);
         }
       } catch (err) {
-        console.error('Failed to load dates:', err);
+        console.error('Failed to load decision dates:', err);
       }
     }
-    loadDates();
+    initDates();
   }, []);
 
-  // Fetch data when date, fullMonth, or gate closure changes
+  // Fetch decision replay when date or cutoff changes
   useEffect(() => {
-    async function loadData() {
-      setLoading(true);
+    async function loadReplay() {
+      if (!selectedDecisionDate) return;
+      setLoadingReplay(true);
       try {
-        const dateFrom = isFullMonth ? '2026-01-01' : selectedDate;
-        const dateTo = isFullMonth ? '2026-01-31' : selectedDate;
-
-        const [kpisRes, tsRes, analyticsRes] = await Promise.all([
-          fetchSummary(dateFrom, dateTo, selectedGateClosure),
-          fetchTimeSeries(dateFrom, dateTo, selectedGateClosure),
-          fetchAccuracyMetrics(dateFrom, dateTo, selectedGateClosure)
-        ]);
-
-        setKpis(kpisRes);
-        setTimeSeries(tsRes);
-        setAnalytics(analyticsRes);
+        const data = await fetchDecisionReplay(selectedDecisionDate, cutoffTime);
+        setReplayData(data);
       } catch (err) {
-        console.error('Error fetching dashboard data:', err);
+        console.error('Failed to load decision replay:', err);
       } finally {
-        setLoading(false);
+        setLoadingReplay(false);
       }
     }
-    loadData();
-  }, [selectedDate, isFullMonth, selectedGateClosure]);
+    loadReplay();
+  }, [selectedDecisionDate, cutoffTime]);
 
-  const handleSelectDateFromCalendar = (date: string) => {
-    setSelectedDate(date);
-    setIsFullMonth(false);
-    setActiveTab('desk');
-  };
+  // Fetch month-long analytics when cutoff changes
+  useEffect(() => {
+    async function loadAnalytics() {
+      setLoadingAnalytics(true);
+      try {
+        const data = await fetchAnalyticsSummary('2026-01-01', '2026-01-31', cutoffTime);
+        setAnalyticsData(data);
+      } catch (err) {
+        console.error('Failed to load analytics summary:', err);
+      } finally {
+        setLoadingAnalytics(false);
+      }
+    }
+    loadAnalytics();
+  }, [cutoffTime]);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
-      {/* Top Navbar */}
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans antialiased">
+      {/* Top Navigation */}
       <Navbar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        selectedGateClosure={selectedGateClosure}
-        setSelectedGateClosure={setSelectedGateClosure}
-        selectedDate={selectedDate}
-        setSelectedDate={setSelectedDate}
-        isFullMonth={isFullMonth}
-        setIsFullMonth={setIsFullMonth}
-        availableDates={availableDates}
+        activeScreen={activeScreen}
+        setActiveScreen={setActiveScreen}
+        decisionDates={decisionDates}
+        selectedDecisionDate={selectedDecisionDate}
+        setSelectedDecisionDate={setSelectedDecisionDate}
+        cutoffTime={cutoffTime}
+        setCutoffTime={setCutoffTime}
+        onOpenPitch={() => setShowPitchModal(true)}
+        onOpenTechReview={() => setShowTechModal(true)}
       />
 
-      {/* Main Content Area */}
+      {/* Main Screen Layout */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Top Executive KPI Row (always visible except on Pitch Deck) */}
-        {activeTab !== 'pitch' && (
-          <ExecutiveKPIs kpis={kpis} loading={loading} />
-        )}
-
-        {/* Dynamic Tab Views */}
-        {activeTab === 'desk' && (
-          <DayAheadDesk
-            timeSeries={timeSeries}
-            loading={loading}
-            selectedDate={selectedDate}
-            selectedGateClosure={selectedGateClosure}
-            isFullMonth={isFullMonth}
-            onSelectDate={handleSelectDateFromCalendar}
+        {activeScreen === 'overview' && (
+          <OverviewPage
+            replay={replayData}
+            loading={loadingReplay}
+            onNavigateToReplay={() => setActiveScreen('replay')}
+            onNavigateToAnalytics={() => setActiveScreen('analytics')}
           />
         )}
 
-        {activeTab === 'analytics' && (
-          <AccuracyAnalytics
-            analytics={analytics}
-            loading={loading}
-            onSelectDate={handleSelectDateFromCalendar}
+        {activeScreen === 'replay' && (
+          <DecisionReplayPage
+            replay={replayData}
+            loading={loadingReplay}
           />
         )}
 
-        {activeTab === 'sensitivity' && <GateClosureImpact />}
+        {activeScreen === 'analytics' && (
+          <AnalyticsPage
+            analytics={analyticsData}
+            loading={loadingAnalytics}
+            onSelectDecisionDate={(date) => {
+              setSelectedDecisionDate(date);
+              setActiveScreen('replay');
+            }}
+          />
+        )}
 
-        {activeTab === 'pitch' && <ClientPitchDeck />}
-
-        {activeTab === 'tech' && <TechLeadReview />}
+        {activeScreen === 'method' && (
+          <DataMethodPage
+            selectedDecisionDate={selectedDecisionDate}
+            cutoffTime={cutoffTime}
+          />
+        )}
       </main>
+
+      {/* Presentation Deck Modal (Part 1 Client Pitch) */}
+      {showPitchModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="max-w-4xl w-full relative">
+            <button
+              onClick={() => setShowPitchModal(false)}
+              className="absolute -top-10 right-0 text-slate-400 hover:text-white text-xs font-mono bg-slate-900 border border-slate-700 px-3 py-1 rounded-lg"
+            >
+              ✕ Close Pitch Deck
+            </button>
+            <ClientPitchDeck />
+          </div>
+        </div>
+      )}
+
+      {/* Technical Review Modal (Part 2 Tech Lead) */}
+      {showTechModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="max-w-4xl w-full relative">
+            <button
+              onClick={() => setShowTechModal(false)}
+              className="absolute -top-10 right-0 text-slate-400 hover:text-white text-xs font-mono bg-slate-900 border border-slate-700 px-3 py-1 rounded-lg"
+            >
+              ✕ Close Tech Review
+            </button>
+            <TechLeadReview />
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <footer className="bg-slate-900 border-t border-slate-800 py-6 mt-12 text-xs text-slate-400">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center space-x-2">
-            <span className="font-bold text-white tracking-tight">
-              AERO<span className="text-sky-400">PROCURE</span>
+            <span className="font-extrabold text-white tracking-tight">
+              Wind<span className="text-sky-400">Lens</span>
             </span>
             <span className="text-slate-500">•</span>
-            <span>UK Day-Ahead Electricity Market & Renewable Forecast Analytics</span>
+            <span>Day-Ahead Wind Forecast Intelligence Platform for UK Electricity Desks</span>
           </div>
 
           <div className="flex items-center space-x-4 font-mono text-[11px] text-slate-500">
-            <span>Source: Elexon BMRS (FUELHH & WINDFOR)</span>
+            <span>Sources: Elexon BMRS FUELHH & WINDFOR</span>
             <span>•</span>
-            <span>Decision Horizon: January 2026</span>
+            <span>Decisions: Jan 1 - Jan 31, 2026 (Delivery: Jan 2 - Feb 1, 2026)</span>
           </div>
         </div>
       </footer>

@@ -1,51 +1,65 @@
 import pytest
-from app.routers.summary import get_executive_summary
-from app.routers.forecasts import get_time_series
-from app.routers.metrics import get_accuracy_analytics
-from app.routers.procurement import run_simulation
-from app.routers.sensitivity import compare_gate_closures
-from app.models.schemas import ThermalProcurementRequest
+from app.api.decision_dates import list_decision_dates
+from app.api.decisions import get_decision_replay, export_decision_csv, get_decision_revisions
+from app.api.analytics import get_analytics_summary
+from app.api.health import health_check, data_quality_audit
 
 
-def test_summary_router():
-    data = get_executive_summary(date_from="2026-01-01", date_to="2026-01-31", gate_closure="da_1100")
-    assert data.total_actual_gwh > 0
-    assert data.metrics.sample_count == 744
-    assert data.active_gate_closure == "da_1100"
+def test_health():
+    res = health_check()
+    assert res["status"] == "healthy"
+    assert res["product"] == "WindLens"
 
 
-def test_timeseries_router():
-    points = get_time_series(date_from="2026-01-01", date_to="2026-01-02", gate_closure="da_1100")
-    assert len(points) == 48
-    assert points[0].actual_mw > 0
-    assert points[0].forecast_mw is not None
+def test_decision_dates():
+    res = list_decision_dates()
+    assert res["count"] == 31
+    assert res["decision_dates"][0]["decision_date"] == "2026-01-01"
+    assert res["decision_dates"][0]["delivery_date"] == "2026-01-02"
+    assert res["decision_dates"][-1]["decision_date"] == "2026-01-31"
+    assert res["decision_dates"][-1]["delivery_date"] == "2026-02-01"
 
 
-def test_metrics_router():
-    analytics = get_accuracy_analytics(date_from=None, date_to=None, gate_closure="da_1100")
-    assert analytics.summary.mae_mw > 0
-    assert len(analytics.settlement_period_profile) == 24
-    assert len(analytics.daily_leaderboard) == 31
-    assert len(analytics.error_distribution) > 0
+def test_decision_replay_jan14():
+    res = get_decision_replay("2026-01-14", "15:30")
+    assert res["decision_date"] == "2026-01-14"
+    assert res["delivery_date"] == "2026-01-15"
+    assert len(res["intervals"]) == 48
+    assert res["summary"]["matched_intervals"] == 48
+    assert res["summary"]["coverage_pct"] == 100.0
+    assert res["summary"]["mae_mw"] > 0
 
 
-def test_procurement_router():
-    req = ThermalProcurementRequest(
-        target_date="2026-01-15",
-        demand_level_mw=32000.0,
-        use_derating_buffer=True,
-        buffer_pct=15.0,
-        gate_closure="da_1100"
-    )
-    result = run_simulation(req)
-    assert "summary" in result
-    assert len(result["hourly_schedule"]) == 24
-    assert result["summary"]["total_demand_mwh"] > 0
+def test_decision_revisions_jan14():
+    res = get_decision_revisions("2026-01-14", "15:30")
+    revisions = res["revisions"]
+    assert len(revisions) > 0
+    # Check that post-15:30 revisions are flagged as EXCLUDED
+    post_cutoff = [r for r in revisions if r["publish_time"] > "2026-01-14T15:30:00Z"]
+    for r in post_cutoff:
+        assert r["status"] == "EXCLUDED"
+        assert r["is_eligible"] is False
 
 
-def test_sensitivity_router():
-    comparison = compare_gate_closures(date_from=None, date_to=None)
-    assert len(comparison) >= 5
-    closures = [c.gate_closure_id for c in comparison]
-    assert "da_1100" in closures
-    assert "intraday" in closures
+def test_csv_export():
+    res = export_decision_csv("2026-01-14", "15:30")
+    csv_text = res.body.decode("utf-8")
+    assert "# WindLens Decision Snapshot Export" in csv_text
+    assert "2026-01-14" in csv_text
+    assert "2026-01-15" in csv_text
+    assert "Settlement Period,Interval Start Time (UTC)" in csv_text
+
+
+def test_analytics_summary():
+    res = get_analytics_summary("2026-01-01", "2026-01-31", "15:30")
+    assert res["decision_days_count"] == 31
+    assert res["total_matched_intervals"] == 31 * 48
+    assert res["coverage_pct"] == 100.0
+    assert len(res["diurnal_profile"]) == 24
+    assert res["mae_mw"] > 0
+
+
+def test_data_quality_report():
+    res = data_quality_audit()
+    assert res["status"] == "healthy"
+    assert res["records_ingested"]["missing_intervals"] == 0

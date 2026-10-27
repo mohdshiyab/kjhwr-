@@ -1,68 +1,58 @@
 import {
-  ExecutiveKPIs,
-  TimeSeriesPoint,
-  AccuracyAnalyticsResponse,
+  DecisionDateItem,
+  DecisionReplayResponse,
+  AnalyticsSummaryResponse,
+  DataQualityReport,
   GateClosureComparisonItem,
   ThermalProcurementResponse
 } from '../types';
 
 const API_BASE = '/api';
 
-export async function fetchSummary(
-  dateFrom?: string,
-  dateTo?: string,
-  gateClosure = 'da_1100'
-): Promise<ExecutiveKPIs> {
-  const params = new URLSearchParams();
-  if (dateFrom) params.append('date_from', dateFrom);
-  if (dateTo) params.append('date_to', dateTo);
-  params.append('gate_closure', gateClosure);
+export async function fetchDecisionDates(): Promise<DecisionDateItem[]> {
+  const res = await fetch(`${API_BASE}/decision-dates`);
+  if (!res.ok) throw new Error('Failed to load decision dates');
+  const data = await res.json();
+  return data.decision_dates || [];
+}
 
-  const res = await fetch(`${API_BASE}/summary?${params.toString()}`);
-  if (!res.ok) throw new Error(`Summary fetch failed: ${res.statusText}`);
+export async function fetchDecisionReplay(
+  decisionDate: string,
+  cutoffTime: string = '15:30'
+): Promise<DecisionReplayResponse> {
+  const res = await fetch(`${API_BASE}/decisions/${decisionDate}?cutoff_time=${encodeURIComponent(cutoffTime)}`);
+  if (!res.ok) throw new Error(`Failed to load decision replay for ${decisionDate}`);
   return res.json();
 }
 
-export async function fetchTimeSeries(
-  dateFrom?: string,
-  dateTo?: string,
-  gateClosure = 'da_1100'
-): Promise<TimeSeriesPoint[]> {
-  const params = new URLSearchParams();
-  if (dateFrom) params.append('date_from', dateFrom);
-  if (dateTo) params.append('date_to', dateTo);
-  params.append('gate_closure', gateClosure);
-
-  const res = await fetch(`${API_BASE}/forecasts/timeseries?${params.toString()}`);
-  if (!res.ok) throw new Error(`Timeseries fetch failed: ${res.statusText}`);
+export async function fetchAnalyticsSummary(
+  dateFrom = '2026-01-01',
+  dateTo = '2026-01-31',
+  cutoffTime = '15:30'
+): Promise<AnalyticsSummaryResponse> {
+  const params = new URLSearchParams({
+    date_from: dateFrom,
+    date_to: dateTo,
+    cutoff_time: cutoffTime
+  });
+  const res = await fetch(`${API_BASE}/analytics/summary?${params.toString()}`);
+  if (!res.ok) throw new Error('Failed to load analytics summary');
   return res.json();
 }
 
-export async function fetchAccuracyMetrics(
-  dateFrom?: string,
-  dateTo?: string,
-  gateClosure = 'da_1100'
-): Promise<AccuracyAnalyticsResponse> {
-  const params = new URLSearchParams();
-  if (dateFrom) params.append('date_from', dateFrom);
-  if (dateTo) params.append('date_to', dateTo);
-  params.append('gate_closure', gateClosure);
-
-  const res = await fetch(`${API_BASE}/metrics?${params.toString()}`);
-  if (!res.ok) throw new Error(`Metrics fetch failed: ${res.statusText}`);
+export async function fetchDataQuality(): Promise<DataQualityReport> {
+  const res = await fetch(`${API_BASE}/data-quality`);
+  if (!res.ok) throw new Error('Failed to load data quality report');
   return res.json();
 }
 
-export async function fetchGateClosureComparison(
-  dateFrom?: string,
-  dateTo?: string
-): Promise<GateClosureComparisonItem[]> {
-  const params = new URLSearchParams();
-  if (dateFrom) params.append('date_from', dateFrom);
-  if (dateTo) params.append('date_to', dateTo);
+export function getExportCsvUrl(decisionDate: string, cutoffTime = '15:30'): string {
+  return `${API_BASE}/decisions/${decisionDate}/export?cutoff_time=${encodeURIComponent(cutoffTime)}`;
+}
 
-  const res = await fetch(`${API_BASE}/sensitivity/compare?${params.toString()}`);
-  if (!res.ok) throw new Error(`Sensitivity fetch failed: ${res.statusText}`);
+export async function fetchGateClosureComparison(): Promise<GateClosureComparisonItem[]> {
+  const res = await fetch(`${API_BASE}/sensitivity/compare`);
+  if (!res.ok) return [];
   return res.json();
 }
 
@@ -84,13 +74,6 @@ export async function simulateProcurement(
       gate_closure: gateClosure
     })
   });
-  if (!res.ok) throw new Error(`Simulation failed: ${res.statusText}`);
+  if (!res.ok) throw new Error('Simulation failed');
   return res.json();
-}
-
-export async function fetchAvailableDates(): Promise<string[]> {
-  const res = await fetch(`${API_BASE}/summary/dates`);
-  if (!res.ok) return [];
-  const data = await res.json();
-  return data.available_dates || [];
 }

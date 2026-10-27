@@ -4,14 +4,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 
-from app.routers import summary, forecasts, metrics, procurement, sensitivity
+from app.api import health, decision_dates, decisions, analytics
+from app.routers import summary, forecasts, metrics, sensitivity
 
 app = FastAPI(
-    title="UK Day-Ahead Power Procurement & Wind Forecast Analytics",
+    title="WindLens — Day-Ahead Wind Forecast Intelligence Platform",
     description="""
-    Interactive Web Application for UK Energy Utility Power Procurement Desks.
-    Quantifies Elexon BMRS Wind Generation Forecasts (WINDFOR) vs Actuals (FUELHH)
-    for January 2026 Day-Ahead Electricity Market Decisions.
+    Purpose-built intelligence platform for UK electricity day-ahead purchasing teams.
+    Reconstructs exact historical decision snapshots, validates forecast vintages at gate closure,
+    and quantifies forecast accuracy vs Elexon BMRS actuals for January 2026 decisions.
     """,
     version="1.0.0"
 )
@@ -25,23 +26,26 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Register API Routers
+# Register WindLens Core Endpoints
+app.include_router(health.router, prefix="/api")
+app.include_router(decision_dates.router, prefix="/api")
+app.include_router(decisions.router, prefix="/api")
+app.include_router(analytics.router, prefix="/api")
+
+# Complementary routes
 app.include_router(summary.router)
 app.include_router(forecasts.router)
 app.include_router(metrics.router)
-app.include_router(procurement.router)
 app.include_router(sensitivity.router)
 
-
+# Health endpoint at root
 @app.get("/health", tags=["Health"])
-def health_check():
+def root_health():
     return {
         "status": "healthy",
-        "market": "UK Day-Ahead Electricity (Elexon BMRS)",
-        "scope": "January 2026 Procurement Decisions",
+        "product": "WindLens",
         "version": "1.0.0"
     }
-
 
 # Static Frontend Mounting for unified Docker / Heroku deployment
 FRONTEND_DIST = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "dist"))
@@ -59,12 +63,11 @@ else:
     @app.get("/", tags=["Root"])
     def root():
         return {
-            "message": "UK Day-Ahead Power Procurement & Wind Forecast Analytics API",
+            "product": "WindLens",
             "docs": "/docs",
-            "health": "/health",
-            "summary": "/api/summary",
-            "timeseries": "/api/forecasts/timeseries",
-            "metrics": "/api/metrics",
-            "procurement_simulate": "/api/procurement/simulate",
-            "sensitivity": "/api/sensitivity/compare"
+            "health": "/api/health",
+            "decision_dates": "/api/decision-dates",
+            "sample_decision": "/api/decisions/2026-01-14",
+            "analytics_summary": "/api/analytics/summary",
+            "data_quality": "/api/data-quality"
         }
