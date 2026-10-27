@@ -7,13 +7,18 @@ import {
   Zap,
   Flame,
   ArrowRight,
+  ArrowLeft,
   ChevronLeft,
   ChevronRight,
   DollarSign,
   Award
 } from 'lucide-react';
 
-export const ClientPitchDeck: React.FC = () => {
+interface ClientPitchDeckProps {
+  onBack?: () => void;
+}
+
+export const ClientPitchDeck: React.FC<ClientPitchDeckProps> = ({ onBack }) => {
   const [slide, setSlide] = useState(0);
 
   const slides = [
@@ -109,25 +114,37 @@ export const ClientPitchDeck: React.FC = () => {
           </div>
         </div>
 
-        {/* Slide Controls */}
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={() => setSlide((prev) => Math.max(0, prev - 1))}
-            disabled={slide === 0}
-            className="p-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:text-white disabled:opacity-40 transition"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <span className="text-xs font-mono text-slate-400 px-2">
-            {slide + 1} / {slides.length}
-          </span>
-          <button
-            onClick={() => setSlide((prev) => Math.min(slides.length - 1, prev + 1))}
-            disabled={slide === slides.length - 1}
-            className="p-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:text-white disabled:opacity-40 transition"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
+        {/* Slide Controls and Back Button */}
+        <div className="flex items-center space-x-3">
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="px-3.5 py-1.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs transition flex items-center space-x-1.5 shadow-md shadow-sky-500/20 cursor-pointer"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>← Back to Dashboard</span>
+            </button>
+          )}
+
+          <div className="flex items-center space-x-1 bg-slate-950/60 border border-slate-800 rounded-lg p-1">
+            <button
+              onClick={() => setSlide((prev) => Math.max(0, prev - 1))}
+              disabled={slide === 0}
+              className="p-1.5 rounded-md text-slate-300 hover:text-white disabled:opacity-30 transition cursor-pointer"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="text-xs font-mono text-slate-400 px-2">
+              {slide + 1} / {slides.length}
+            </span>
+            <button
+              onClick={() => setSlide((prev) => Math.min(slides.length - 1, prev + 1))}
+              disabled={slide === slides.length - 1}
+              className="p-1.5 rounded-md text-slate-300 hover:text-white disabled:opacity-30 transition cursor-pointer"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
 

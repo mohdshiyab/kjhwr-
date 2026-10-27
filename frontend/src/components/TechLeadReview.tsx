@@ -10,31 +10,48 @@ import {
   GitBranch,
   ShieldCheck,
   Cpu,
-  FileText
+  FileText,
+  ArrowLeft
 } from 'lucide-react';
 
-export const TechLeadReview: React.FC = () => {
+interface TechLeadReviewProps {
+  onBack?: () => void;
+}
+
+export const TechLeadReview: React.FC<TechLeadReviewProps> = ({ onBack }) => {
   return (
     <div className="space-y-6">
       {/* Top Banner */}
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl">
-        <div className="flex items-center space-x-3 pb-4 border-b border-slate-800">
-          <div className="p-2 rounded-xl bg-violet-500/10 text-violet-400">
-            <Terminal className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="flex items-center space-x-2">
-              <span className="text-xs font-semibold uppercase tracking-wider text-violet-400">
-                Part 2: Technical Walkthrough & Knowledge Transfer
-              </span>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-violet-950/80 text-violet-300 border border-violet-800 font-mono">
-                For Tech Lead Review
-              </span>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-800 gap-4">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 rounded-xl bg-violet-500/10 text-violet-400">
+              <Terminal className="w-5 h-5" />
             </div>
-            <h1 className="text-lg font-bold text-white tracking-tight">
-              Software Architecture, Data Pipelines & Engineering Standards
-            </h1>
+            <div>
+              <div className="flex items-center space-x-2">
+                <span className="text-xs font-semibold uppercase tracking-wider text-violet-400">
+                  Part 2: Technical Walkthrough & Knowledge Transfer
+                </span>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-violet-950/80 text-violet-300 border border-violet-800 font-mono">
+                  For Tech Lead Review
+                </span>
+              </div>
+              <h1 className="text-lg font-bold text-white tracking-tight">
+                Software Architecture, Data Pipelines & Engineering Standards
+              </h1>
+            </div>
           </div>
+
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs transition flex items-center space-x-2 shadow-md shadow-sky-500/20 cursor-pointer self-start sm:self-auto shrink-0"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>← Back to Dashboard</span>
+            </button>
+          )}
         </div>
 
         <p className="text-sm text-slate-300 mt-4 leading-relaxed">
