@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+.pytest_cache/
+*.log
+
+# Node & Frontend
+node_modules/
+.npm
+.DS_Store
+
+# IDE & OS
+.vscode/
+.idea/
+Thumbs.db
