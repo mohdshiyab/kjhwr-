@@ -6,7 +6,7 @@
 [![Tests](https://img.shields.io/badge/Tests-17%20Passing-brightgreen.svg)]()
 
 > **Live Application Demo (Vercel / Render / Heroku):**  
-> 🔗 **[https://windlens-uk-energy.vercel.app](https://windlens-uk-energy.vercel.app)** *(or active container deployment)*  
+> 🔗 **[https://elexon-dayahead-procure-analytics.vercel.app](https://elexon-dayahead-procure-analytics.vercel.app)** *(or active container deployment)*  
 > 
 
 
