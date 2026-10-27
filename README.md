@@ -8,8 +8,7 @@
 > **Live Application Demo (Vercel / Render / Heroku):**  
 > 🔗 **[https://windlens-uk-energy.vercel.app](https://windlens-uk-energy.vercel.app)** *(or active container deployment)*  
 > 
-> **Unlisted Video Walkthrough (10 Minutes Max):**  
-> 🎥 **[YouTube Video: Part 1 Client Pitch & Part 2 Tech Lead Walkthrough](https://www.youtube.com/watch?v=UNLISTED_DEMO_LINK)**
+
 
 ---
 
